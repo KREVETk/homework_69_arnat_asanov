@@ -1,11 +1,69 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Калькулятор API</title>
+    <script>
+        async function sendRequest(operation) {
+            const a = document.getElementById("inputA").value;
+            const b = document.getElementById("inputB").value;
+            const resultBlock = document.getElementById("result");
 
-{% block title %}
-    <title>Articles</title>
-{% endblock %}
+            try {
+                const response = await fetch(`/${operation}/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                    body: JSON.stringify({A: Number(a), B: Number(b)})
+                });
 
-{% block content %}
-    {% include "partial/simple_search.html" with form=search_form %}
-    {% include "partial/articles_list.html" %}
+                const data = await response.json();
 
-{% endblock %}
+                if (response.ok) {
+                    resultBlock.innerText = data.answer;
+                    resultBlock.style.color = "green";
+                } else {
+                    resultBlock.innerText = data.error;
+                    resultBlock.style.color = "red";
+                }
+            } catch (err) {
+                resultBlock.innerText = "Ошибка запроса!";
+                resultBlock.style.color = "red";
+            }
+        }
+
+        // Достаём CSRF cookie (как в примере препода)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</head>
+<body>
+    <h1>Калькулятор API</h1>
+
+    <input type="number" id="inputA" placeholder="Введите A">
+    <input type="number" id="inputB" placeholder="Введите B">
+
+    <div>
+        <button data-op="add" onclick="sendRequest('add')">Сложить</button>
+        <button data-op="subtract" onclick="sendRequest('subtract')">Вычесть</button>
+        <button data-op="multiply" onclick="sendRequest('multiply')">Умножить</button>
+        <button data-op="divide" onclick="sendRequest('divide')">Разделить</button>
+    </div>
+
+    <h2 id="result"></h2>
+</body>
+</html>
